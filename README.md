@@ -25,42 +25,57 @@ Unlike standard "happy path" tutorials, this project simulates a **hostile data 
 
 ```mermaid
 graph TD
-    subgraph Docker_Container [🐳 Docker Container]
-        subgraph Airflow [Apache Airflow Orchestration]
-            Init_DAG[Init Backfill DAG]
-            Daily_DAG[Daily Incremental DAG]
-        end
+    %% 🐳 Containerized Environment
+    subgraph Docker [🐳 Docker Container]
+        Postgres[(Postgres DB)] <-->|Metadata| Airflow[Apache Airflow]
         
-        subgraph Scripts [Python Scripts]
-            Gen[Generator.py]
-            Chaos[Chaos Monkey 💣]
+        subgraph Scripts [Python Modules]
+            Gen[Generator] --> Chaos[Chaos Monkey 💣]
+            Snapshot[Snapshot Gen 📸]
             Loader[Snowflake Loader]
         end
+
+        dbt[dbt Core & Elementary 🔎]
+    end
+    
+    %% ☁️ Cloud Resources
+    S3[(AWS S3 Landing)]
+    
+    subgraph Snowflake [❄️ Snowflake Data Cloud]
+        Raw[RAW Layer] --> Staging[Staging] --> Marts[Data Marts]
+        DQ_Logs[Elementary DQ Logs]
     end
 
-    subgraph AWS_Cloud [AWS Cloud]
-        S3[(S3 Landing Zone)]
-    end
+    %% 🖥️ UI
+    Streamlit[📊 Streamlit Dashboard]
 
-    subgraph Snowflake_Data_Cloud [❄️ Snowflake Data Cloud]
-        Raw[RAW Layer]
-        Staging[Staging Views]
-        Marts[Data Marts]
-    end
+    %% ==========================================
+    %% 🚀 Pipeline Execution Flow (Sequential)
+    %% ==========================================
 
-    subgraph User_Interface [User Interface]
-        Streamlit[📊 Streamlit Dashboard]
-    end
+    %% 1. Ingestion
+    Airflow -- "1. Trigger" --> Gen
+    Chaos -->|Upload CSV| S3
 
-    %% Flows
-    Daily_DAG -->|Triggers| Gen
-    Gen -->|Generates Data| Chaos
-    Chaos -->|Dirty CSVs| S3
-    Daily_DAG -->|Triggers| Loader
-    Loader -->|COPY INTO| Raw
-    Daily_DAG -->|Triggers dbt| Staging
-    Raw --> Staging --> Marts
-    Streamlit -->|Queries| Marts
+    %% 4. Reporting
+    Airflow -- "4. Trigger" --> Snapshot
+    Snapshot -->|Read Metrics| Marts
+    Snapshot -->|Read Failures| DQ_Logs
+
+    %% 2. Loading
+    Airflow -- "2. Trigger" --> Loader
+    Loader -->|Command: COPY| Raw
+    S3 -.->|Data Flow| Raw
+
+    %% 3. Transformation
+    Airflow -- "3. Trigger" --> dbt
+    dbt -->|Transform| Staging
+    dbt -->|Monitor| DQ_Logs
+    Staging -.->|Capture Failures| DQ_Logs
+    
+    %% Dashboard
+    Streamlit -->|Demo Mode| Snapshot
+    Streamlit -->|Live Mode| Marts
 ```
 
 The pipeline is containerized using Docker and orchestrated by Airflow.

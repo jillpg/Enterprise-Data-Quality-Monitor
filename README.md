@@ -23,7 +23,45 @@ Unlike standard "happy path" tutorials, this project simulates a **hostile data 
 
 ## 🏗️ Architecture
 
-![Architecture Diagram](https://raw.githubusercontent.com/username/repo/main/docs/architecture.png)
+```mermaid
+graph TD
+    subgraph Docker_Container [🐳 Docker Container]
+        subgraph Airflow [Apache Airflow Orchestration]
+            Init_DAG[Init Backfill DAG]
+            Daily_DAG[Daily Incremental DAG]
+        end
+        
+        subgraph Scripts [Python Scripts]
+            Gen[Generator.py]
+            Chaos[Chaos Monkey 💣]
+            Loader[Snowflake Loader]
+        end
+    end
+
+    subgraph AWS_Cloud [AWS Cloud]
+        S3[(S3 Landing Zone)]
+    end
+
+    subgraph Snowflake_Data_Cloud [❄️ Snowflake Data Cloud]
+        Raw[RAW Layer]
+        Staging[Staging Views]
+        Marts[Data Marts]
+    end
+
+    subgraph User_Interface [User Interface]
+        Streamlit[📊 Streamlit Dashboard]
+    end
+
+    %% Flows
+    Daily_DAG -->|Triggers| Gen
+    Gen -->|Generates Data| Chaos
+    Chaos -->|Dirty CSVs| S3
+    Daily_DAG -->|Triggers| Loader
+    Loader -->|COPY INTO| Raw
+    Daily_DAG -->|Triggers dbt| Staging
+    Raw --> Staging --> Marts
+    Streamlit -->|Queries| Marts
+```
 
 The pipeline is containerized using Docker and orchestrated by Airflow.
 
@@ -154,22 +192,24 @@ python -m streamlit run app.py
 ## 📂 Project Structure
 
 ```bash
-├── dags/                   # Airflow DAGs
-│   ├── init_backfill.py    # One-time Setup Pipeline
-│   └── elt_pipeline.py     # Daily Incremental Pipeline
-├── src/                    # Python Source Code
-│   ├── chaos_monkey.py     # Data Corruption Engine
-│   ├── generator.py        # Synthetic Data Factory
-│   └── snowflake_loader.py # Universal Loader (Full/Inc)
-├── dbt_project/            # Modern Data Stack
-│   ├── models/             # SQL Models (Staging/Marts)
-│   └── tests/              # Generic & Singular Tests
-├── snowflake_sql/          # SQL Setup Scripts (Must run first!)
-│   ├── 01_setup...         # DB & Warehouse
-│   ├── 02_storage...       # AWS Integration
-│   └── ...
-├── app.py                  # Streamlit Dashboard
-└── docker-compose.yaml     # Infrastructure as Code
+├── dags/                           # 🌪️ Airflow DAGs (Orchestration)
+│   ├── init_backfill.py            # "The Big Bang" (One-time Setup)
+│   └── elt_pipeline.py             # Daily Incremental Pipeline
+├── src/                            # 🐍 Python Business Logic
+│   ├── chaos_monkey.py             # Data Corruption Engine
+│   ├── generator.py                # Synthetic Data Factory
+│   └── ...                         # Loaders, Snapshots, & Utils
+├── snowflake_sql/                  # ❄️ Infrastructure as Code (SQL)
+│   ├── 01_setup_environment.sql    # DB Setup
+│   └── ...                         # Storage Int, Tables, & Loading
+├── dbt_project/                    # 🏗️ Transformation Layer
+│   ├── models/                     # SQL Models (Staging/Marts)
+│   └── tests/                      # Data Quality Tests
+├── app.py                          # 📊 Streamlit Dashboard Entry Point
+├── main.py                         # 🚀 Data Ingestion Entry Point
+├── docker-compose.yaml             # 🐋 Container Orchestration
+├── requirements.txt                # Dependencies
+└── README.md                       # Documentation
 ```
 
 ---

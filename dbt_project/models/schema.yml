@@ -1,0 +1,67 @@
+version: 2
+
+sources:
+  - name: raw_layer
+    database: EDQM_DB
+    schema: RAW
+    tables:
+      - name: raw_customers
+      - name: raw_products
+      - name: raw_orders
+
+models:
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_orders
+    columns:
+      - name: order_id
+        tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null
+
+  - name: fct_orders
+    config:
+      meta:
+        owner: "Data Team"
+    columns:
+      - name: order_id
+        tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null
+      
+      - name: customer_id
+        tests:
+          # Relationships test (Referential Integrity)
+          # We use Severity: WARN because we expect Bad Data from Chaos Monkey
+          # and we want to surface it in the Dashboard, not kill the pipeline.
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+              config:
+                severity: warn
+                error_if: ">1000"
+                warn_if: ">0"
+
+      - name: total_amount
+        tests:
+          # Custom check via dbt_expectations or standard SQL
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              config:
+                severity: warn

@@ -8,7 +8,7 @@ USE WAREHOUSE EDQM_WH;
 COPY INTO raw_customers
 FROM @s3_landing_stage/customers/
 FILE_FORMAT = (FORMAT_NAME = csv_format)
-ON_ERROR = 'CONTINUE'; -- Log errors but don't stop
+ON_ERROR = 'CONTINUE'; -- Resilient loading: Skip bad records, log errors
 
 -- Load Products
 COPY INTO raw_products

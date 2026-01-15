@@ -32,9 +32,7 @@ def run_load(mode='incremental'):
             force_option = "FORCE = TRUE"
         else:
             print("  [INCREMENTAL] Skipping Truncate (Appending new files)...")
-            # For incremental, we ALWAYS reload dimensions because they might have updates?
-            # Actually, our strategy says Dimensions are static. 
-            # But let's reload them gently (no force) just in case.
+            # Incremental load: Append only. Dimensions treated as Type 1 (overwrite not supported in this simple loader).
             force_option = "FORCE = FALSE"
 
         print(f"Loading Customers ({force_option})...")

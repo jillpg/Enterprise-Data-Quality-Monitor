@@ -7,9 +7,8 @@ fake = Faker()
 
 class CustomerGenerator:
     def __init__(self, num_customers=50):
-        # Deterministic Seed for Customers!
-        # This ensures that if we run the script multiple times (for different days),
-        # the Customer IDs remain constant, preventing "Orphan Orders" for past data.
+        # Use a fixed seed to ensure consistent customer IDs across runs,
+        # preventing orphan orders when regenerating historical segments.
         Faker.seed(42) 
         self.fake = Faker()
         self.num_customers = num_customers
@@ -28,9 +27,9 @@ class CustomerGenerator:
 
 class ProductGenerator:
     def __init__(self, num_products=20):
-        # Deterministic Seed for Products too!
+        # Deterministic seed for consistent product catalog generation.
         Faker.seed(42)
-        random.seed(42)  # <--- CRITICAL: Fixes random.uniform(price) fluctuations!
+        random.seed(42)
         self.fake = Faker()
         self.num_products = num_products
 

@@ -182,28 +182,26 @@ def main():
     tab1, tab2 = st.tabs(["📊 Business Overview", "🚨 Quarantine Zone"])
     
     with tab1:
-        # Time Series
-        # Time Series
+        # Time Series Analysis
         if not df.empty:
             # Filter out future dates (Chaos Data) for the cleaner Business View
             valid_dates_mask = df['order_date'] <= pd.Timestamp.now()
             df_clean_view = df[valid_dates_mask]
             
-            # Group by date for the Chart
+            # Daily aggregation
             daily = df_clean_view.groupby('order_date')[['total_revenue', 'clean_revenue']].sum().reset_index()
             
-            # Melt for multi-line chart
             daily_melted = daily.melt(id_vars='order_date', value_vars=['total_revenue', 'clean_revenue'], 
                                       var_name='Metric', value_name='Amount')
             
             fig = px.line(daily_melted, x='order_date', y='Amount', color='Metric',
-                          title='💰 Revenue Quality Impact: Reported (Raw) vs Real (Clean)',
+                          title='Revenue Quality Impact: Reported (Raw) vs Real (Clean)',
                           color_discrete_map={'total_revenue': 'red', 'clean_revenue': 'green'},
                           markers=True)
                           
             st.plotly_chart(fig, width="stretch")
             
-            # Calculation of "Lost/Risk Revenue"
+            # Calculate Revenue Risk
             total_raw = daily['total_revenue'].sum()
             total_clean = daily['clean_revenue'].sum()
             delta_risk = total_raw - total_clean
@@ -211,8 +209,6 @@ def main():
             st.warning(f"⚠️ Financial Risk Detected: ${delta_risk:,.2f} of reported revenue is compromised by data quality issues.")
             
             # Status Distribution
-            # Chaos Monkey introduces many dirty statuses ("Completado", "Shipped!").
-            # Clean charts should group these into "Invalid" or filter them.
             VALID_STATUSES = ['COMPLETED', 'PENDING', 'SHIPPED', 'CANCELLED']
             
             df_status_clean = df.copy()
@@ -222,7 +218,7 @@ def main():
             
             status_df = df_status_clean.groupby('status_group')['order_count'].sum().reset_index()
             fig2 = px.bar(status_df, x='status_group', y='order_count', 
-                          title='Orders by Status (Dirty Data Grouped)', 
+                          title='Orders by Status', 
                           color='status_group',
                           color_discrete_map={'INVALID/DIRTY': 'red', 'COMPLETED': 'green', 'PENDING': 'orange'})
             st.plotly_chart(fig2, width="stretch")

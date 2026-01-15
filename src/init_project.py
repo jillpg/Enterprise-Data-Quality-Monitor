@@ -18,8 +18,8 @@ load_dotenv()
 def init_project():
     print("=== Enterprise Data Quality Monitor: INITIALIZATION (Backfill) ===")
     
-    # 1. Clean Slate
-    print("\n[Step 1] Cleaning S3 Landing Zone...")
+    # Initialize S3 Landing Zone (Clean Slate)
+    print("\nInitializing Project: Clean S3 Landing Zone...")
     try:
         clean_s3_landing()
     except Exception as e:
@@ -29,8 +29,8 @@ def init_project():
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
-    # 2. Dimensions (Deterministic)
-    print("\n[Step 2] Generating Dimensions...")
+    # Generate Reference Dimensions (Customers, Products)
+    print("Generating Reference Data...")
     cust_gen = CustomerGenerator(num_customers=2000)
     df_customers = cust_gen.generate()
     
@@ -55,8 +55,8 @@ def init_project():
         loader.upload_file(path_cust, f"{LANDING_PREFIX}/customers/customers.csv")
         loader.upload_file(path_prod, f"{LANDING_PREFIX}/products/products.csv")
 
-    # 3. Generating History (12 Months)
-    print("\n[Step 3] Generating 12 Months of History...")
+    # Generate 12 Months of Historical Data (Backfill)
+    print("Generating Historical Data (12 Months)...")
     
     end_date = datetime.now().date()
     start_date = end_date - timedelta(days=365)
@@ -91,8 +91,8 @@ def init_project():
         total_orders += len(df_orders_dirty)
         current_date += timedelta(days=1)
 
-    print(f"\n[Step 4] Setting Watermark...")
-    # Set watermark to TODAY so daily run knows where to start next time
+    print(f"\nSetting Watermark to {end_date}...")
+    # Initialize watermark to enable incremental processing from tomorrow
     watermark_file = os.path.join(DATA_DIR, 'watermark.txt')
     with open(watermark_file, 'w') as f:
         f.write(end_date.strftime('%Y-%m-%d'))

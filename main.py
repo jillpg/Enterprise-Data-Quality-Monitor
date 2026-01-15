@@ -19,8 +19,7 @@ def main():
     DATA_DIR = 'data'
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
-    # 1. Load Dimension Data (Reuse existing to maintain Referential Integrity)
-    # The Init flow created these. We just load them to generate valid orders.
+    # Load existing dimensions to maintain referential integrity with generated orders.
     path_cust = os.path.join(DATA_DIR, 'customers.csv')
     path_prod = os.path.join(DATA_DIR, 'products.csv')
     
@@ -33,18 +32,14 @@ def main():
     df_products = pd.read_csv(path_prod)
     print(f"Loaded {len(df_customers)} customers and {len(df_products)} products.")
 
-    # 2. Determine Time Window (Incremental Strategy)
-    watermark_file = os.path.join(DATA_DIR, 'watermark.txt')
-    
+    # Determine incremental time window.
+    # Defaults to T-1 (yesterday) if no watermark exists.
     if os.path.exists(watermark_file):
         with open(watermark_file, 'r') as f:
             last_run_date_str = f.read().strip()
         last_run_date = datetime.strptime(last_run_date_str, '%Y-%m-%d').date()
     else:
-        print("WARNING: No watermark found. Assuming first run or manual reset.")
-        # If no watermark, maybe default to Yesterday? Or fail? 
-        # User requested flow: "Rellene desde el ultimo dia". 
-        # For safety, let's default to Yesterday so we generate Today.
+        print("WARNING: No watermark found. Defaulting to T-1.")
         last_run_date = datetime.now().date() - timedelta(days=1)
 
     today = datetime.now().date()
@@ -59,7 +54,7 @@ def main():
         print(f"   (Today is {today}, Last run was {last_run_date})")
         return
 
-    # 3. Generate Data for Window
+    # Generate data for the determined window.
     current_date = start_date
     
     BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
@@ -97,7 +92,7 @@ def main():
         total_orders_generated += len(df_orders_dirty)
         current_date += timedelta(days=1)
 
-    # 4. Update Watermark
+    # Update watermark to today's date upon successful completion.
     with open(watermark_file, 'w') as f:
         f.write(today.strftime('%Y-%m-%d'))
         

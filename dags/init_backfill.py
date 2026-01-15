@@ -13,7 +13,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Define DAG: INITIALIZATION (Manual Trigger Only)
+# Orchestrates full backfill sequence: S3 Clean -> History Gen -> Full Load -> dbt Build
 with DAG(
     'init_backfill_project',
     default_args=default_args,
@@ -22,8 +22,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    # Task 1: Initialization Logic (Backfill 12 Months)
-    # This runs src/init_project.py which cleans S3 and generates history
+    # Initialization: Clean S3, generate history, and hydrate Landing Zone
     t1_init_backfill = BashOperator(
         task_id='run_initialization_backfill',
         bash_command='python src/init_project.py',
@@ -32,21 +31,21 @@ with DAG(
 
     # --- REUSED TASKS (Same as Daily Pipeline) ---
 
-    # Task 2: Load to Snowflake (Standard Loader works for backfill too)
+    # Load: Full ingestion to Snowflake (Truncate & Load)
     t2_load = BashOperator(
         task_id='load_to_snowflake',
         bash_command='python src/snowflake_loader.py --mode full',
         cwd='/opt/airflow/project'
     )
 
-    # Task 3: dbt Transformation (Full Run)
+    # Transformation: Full dbt rebuild (Clean + Run + Test)
     t3_transform = BashOperator(
         task_id='dbt_transform',
         bash_command='dbt clean && dbt deps --profiles-dir . && dbt run --profiles-dir . && dbt test --profiles-dir .',
         cwd='/opt/airflow/project/dbt_project'
     )
 
-    # Task 4: Generate Dashboard Snapshot
+    # Reporting: Generate initial dashboard snapshot
     t4_snapshot = BashOperator(
         task_id='refresh_snapshot',
         bash_command='python src/snapshot_generator.py',

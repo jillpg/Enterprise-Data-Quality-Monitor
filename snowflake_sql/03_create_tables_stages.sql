@@ -16,12 +16,17 @@ CREATE OR REPLACE FILE FORMAT csv_format
 -- Requires the integration created in step 02
 CREATE OR REPLACE STAGE s3_landing_stage
   STORAGE_INTEGRATION = s3_edqm_integration
-  URL = 's3://your-bucket-name/landing/' -- <--- REPLACE WITH YOUR BUCKET URL
+  URL = 's3://your-bucket-name/landing/' -- Load Customers
   FILE_FORMAT = csv_format;
 
+COPY INTO raw_customers
+FROM @s3_landing_stage/customers/
+FILE_FORMAT = (FORMAT_NAME = csv_format)
+ON_ERROR = 'CONTINUE'; -- Resilient loading: Skip bad records, log errors
+
 -- Tables (RAW Layer)
--- Strategy: Use STRING/VARCHAR for everything to prevent load failures. 
--- Type casting happens in dbt.
+-- Ingestion Strategy: Full VARCHAR typing to decouple Load/Transform failures.
+-- Type enforcement and cleansing are delegated to the dbt Transformation layer.
 
 CREATE OR REPLACE TABLE raw_customers (
     customer_id STRING,

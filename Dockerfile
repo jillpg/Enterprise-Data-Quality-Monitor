@@ -1,7 +1,7 @@
 FROM apache/airflow:2.8.1-python3.10
 
 USER root
-# Install git for dbt packages
+# Install git (required for dbt package dependencies)
 RUN apt-get update && \
     apt-get install -y git && \
     apt-get clean

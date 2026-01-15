@@ -21,7 +21,7 @@ def generate_dashboard_feed():
     conn = get_snowflake_conn()
     
     try:
-        # 1. Get Business Metrics (Orders)
+        # Fetch aggregated business metrics (Revenue, Quality Scores)
         query_orders = """
         SELECT 
             order_date, 
@@ -53,10 +53,8 @@ def generate_dashboard_feed():
         print("Fetching Order Metrics...")
         df_orders = pd.read_sql(query_orders, conn)
         
-        # 2. Get Data Quality Logs (Elementary)
-        # Note: This query assumes Elementary is running and populating tables.
-        # If Elementary is not yet set up, this part might return empty.
-        # We look for the model run results or test results.
+        # Fetch Data Quality Logs from Elementary results
+        # Requires Elementary dbt package to be active.
         
         query_dq = """
         SELECT 
@@ -68,8 +66,7 @@ def generate_dashboard_feed():
         # We might need to adjust schema/table based on Elementary version
         
         print("Fetching DQ Metrics (Placeholder if Elementary not ready)...")
-        # For now, let's just save the Orders data which serves as the feed
-        # We will enhance this once dbt run has happened.
+        # Save snapshot for dashboard ingestion.
         
         output_path = 'dashboard_feed.csv'
         df_orders.to_csv(output_path, index=False)

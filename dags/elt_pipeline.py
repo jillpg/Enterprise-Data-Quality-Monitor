@@ -22,21 +22,21 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    # Task 1: Generate Data (Chaos Monkey)
+    # Data Source: Generate synthetic data with chaos injection
     t1_ingestion = BashOperator(
         task_id='run_ingestion',
         bash_command='python main.py',
         cwd='/opt/airflow/project'
     )
 
-    # Task 2: Load to Snowflake
+    # Ingestion: Incremental load to Snowflake RAW layer
     t2_load = BashOperator(
         task_id='load_to_snowflake',
         bash_command='python src/snowflake_loader.py --mode incremental',
         cwd='/opt/airflow/project'
     )
 
-    # Task 3: dbt Transformation (Run + Test)
+    # Transformation: Execute dbt models and tests
     t3_transform = BashOperator(
         task_id='dbt_transform',
         bash_command='dbt run --profiles-dir . && dbt test --profiles-dir .',

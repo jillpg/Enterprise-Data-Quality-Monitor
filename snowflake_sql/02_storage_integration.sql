@@ -8,10 +8,10 @@ CREATE OR REPLACE STORAGE INTEGRATION s3_edqm_integration
   TYPE = EXTERNAL_STAGE
   STORAGE_PROVIDER = 'S3'
   ENABLED = TRUE
-  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::123456789012:role/your_snowflake_role' -- <--- REPLACE WITH YOUR ARN
-  STORAGE_ALLOWED_LOCATIONS = ('s3://your-bucket-name/'); -- <--- CHANGE THIS to your bucket
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::123456789012:role/your_snowflake_role' -- Replace with your IAM Role ARN
+  STORAGE_ALLOWED_LOCATIONS = ('s3://your-bucket-name/'); -- Replace with your S3 Bucket URL
 
--- IMPORTANT: Run this command to get the AWS User and External ID
+-- Retrieve IAM User and External ID for AWS Trust Policy configuration
 DESC STORAGE INTEGRATION s3_edqm_integration;
 
 -- Actions required in AWS Console after this step:

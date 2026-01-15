@@ -23,9 +23,8 @@ class ChaosMonkey:
         if n_rows == 0:
             return df
         
-        # Randomize "Chaos Intensity" per execution
-        # Max errors per category ~ error_rate
-        # But we want variability: some days have 0 errors, others have many.
+        # Randomize corruption intensity per run to simulate real-world variability.
+        # Limits max errors to a fraction of the total dataset size.
         max_errors_per_cat = int(n_rows * self.error_rate)
         
         print(f"  [ChaosMonkey 2.0] Randomized Intensity (Max {max_errors_per_cat} per cat)...")
@@ -33,7 +32,7 @@ class ChaosMonkey:
         def get_random_count():
             return random.randint(0, max_errors_per_cat)
 
-        # 1. Referential Integrity: Invalid customer_id (Ghost Customers)
+        # 1. Referential Integrity Violation (Ghost Customers)
         n = get_random_count()
         if n > 0:
             idxs_ref = np.random.choice(df.index, size=n, replace=False)
@@ -71,8 +70,8 @@ class ChaosMonkey:
             typos = ['Completado', 'completed', 'Shipped!', 'Pending...', 'Cancelled (User)']
             df.loc[idxs_typo, 'status'] = [random.choice(typos) for _ in range(n_typo)]
 
-        # 7. Uniqueness: Duplicate Orders
-        # Duplicates are special, let's keep them rare but random (0 to 5)
+        # 7. Uniqueness Violation (Duplicate Records)
+        # Injects a small number of full-row duplicates.
         n_dups = random.randint(0, 5)
         if n_dups > 0:
             duplicate_rows = df.sample(n=min(n_dups, n_rows))

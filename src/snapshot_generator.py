@@ -2,6 +2,11 @@ import os
 import snowflake.connector
 import pandas as pd
 from dotenv import load_dotenv
+import sys
+
+# Add src path to allow imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from s3_loader import S3Loader
 
 load_dotenv()
 
@@ -72,7 +77,18 @@ def generate_dashboard_feed():
         df_orders.to_csv(output_path, index=False)
         print(f"Snapshot saved to {output_path}")
 
-        # TODO: Upload to S3 public_assets here using S3Loader
+        # Upload to S3
+        BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+        AWS_ACCESS = os.getenv('AWS_ACCESS_KEY_ID')
+        AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY')
+        
+        if BUCKET_NAME:
+            print(f"Uploading {output_path} to S3...")
+            loader = S3Loader(BUCKET_NAME, AWS_ACCESS, AWS_SECRET)
+            loader.upload_file(output_path, output_path) # Upload to root explicitly as requested by 'public_assets or root'
+            # Or usually 'public_assets/dashboard_feed.csv' but app.py looks for 'dashboard_feed.csv' directly?
+            # app.py download_file(bucket, 'dashboard_feed.csv', 'dashboard_feed.csv') implies ROOT.
+            # So we upload to ROOT.
 
     finally:
         conn.close()

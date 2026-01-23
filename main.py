@@ -34,12 +34,33 @@ def main():
 
     # Determine incremental time window.
     # Defaults to T-1 (yesterday) if no watermark exists.
+    today = datetime.now().date()
+    
+    # 0. Initialize S3 Loader (Early init for watermark check)
+    BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+    AWS_ACCESS = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY')
+    LANDING_PREFIX = os.getenv('S3_LANDING_PREFIX', 'landing')
+    
+    loader = None
+    if BUCKET_NAME and AWS_ACCESS:
+        loader = S3Loader(BUCKET_NAME, AWS_ACCESS, AWS_SECRET)
+
+    # Determine incremental time window.
+    watermark_file = os.path.join(DATA_DIR, 'watermark.txt')
+    
+    # Try Download Watermark from S3 if missing locally
+    if not os.path.exists(watermark_file) and loader:
+        print("  Checking S3 for persistent watermark...")
+        loader.download_file('watermark.txt', watermark_file)
+
+    # Defaults to T-1 (yesterday) if no watermark exists/found.
     if os.path.exists(watermark_file):
         with open(watermark_file, 'r') as f:
             last_run_date_str = f.read().strip()
         last_run_date = datetime.strptime(last_run_date_str, '%Y-%m-%d').date()
     else:
-        print("WARNING: No watermark found. Defaulting to T-1.")
+        print("WARNING: No watermark found (Local or S3). Defaulting to T-1.")
         last_run_date = datetime.now().date() - timedelta(days=1)
 
     today = datetime.now().date()
@@ -57,14 +78,8 @@ def main():
     # Generate data for the determined window.
     current_date = start_date
     
-    BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
-    AWS_ACCESS = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET = os.getenv('AWS_SECRET_ACCESS_KEY')
-    LANDING_PREFIX = os.getenv('S3_LANDING_PREFIX', 'landing')
-    
-    loader = None
-    if BUCKET_NAME and AWS_ACCESS:
-        loader = S3Loader(BUCKET_NAME, AWS_ACCESS, AWS_SECRET)
+    # Generator
+    # (S3Loader initialized above)
 
     total_orders_generated = 0
 
@@ -93,10 +108,13 @@ def main():
         current_date += timedelta(days=1)
 
     # Update watermark to today's date upon successful completion.
-    with open(watermark_file, 'w') as f:
+    watermark_path = os.path.join(DATA_DIR, 'watermark.txt') # Re-define path safely
+    with open(watermark_path, 'w') as f:
         f.write(today.strftime('%Y-%m-%d'))
+    
+    if loader:
+        loader.upload_file(watermark_path, 'watermark.txt')
         
-    print(f"\nTotal Generated: {total_orders_generated} orders.")
     print(f"Watermark updated to: {today}")
     print("=== Daily Ingestion Phase Complete ===")
 

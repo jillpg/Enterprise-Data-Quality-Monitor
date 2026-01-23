@@ -98,6 +98,10 @@ def init_project():
         f.write(end_date.strftime('%Y-%m-%d'))
         
     print(f"   Watermark set to: {end_date}")
+
+    if loader:
+        loader.upload_file(watermark_file, 'watermark.txt')
+
     print(f"\n=== Initialization Complete ({total_orders} orders generated) ===")
 
 if __name__ == "__main__":

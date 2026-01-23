@@ -29,3 +29,17 @@ class S3Loader:
         except Exception as e:
             print(f"  An error occurred: {e}")
             return False
+
+    def download_file(self, s3_key, local_path):
+        """
+        Downloads a file from S3.
+        """
+        try:
+            print(f"  Downloading s3://{self.bucket_name}/{s3_key} to {local_path} ...")
+            self.s3_client.download_file(self.bucket_name, s3_key, local_path)
+            print("  Download Success.")
+            return True
+        except Exception as e:
+            print(f"  Download Failed: {e}")
+            return False
+

@@ -61,3 +61,6 @@ Thumbs.db
 data/
 *.log
 dashboard_feed.csv
+.streamlit/secrets.toml
+
+TO-DO.md

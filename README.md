@@ -1,6 +1,12 @@
 # �️ Enterprise Data Quality Monitor (ELT + Observability)
 
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.32+-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://enterprise-data-quality-monitor.streamlit.app/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 > **A Production-Grade Data Engineering Portfolio Project**
+
 > *Built with Python, Apache Airflow (Docker), Snowflake, dbt Core, Elementary & Streamlit.*
 
 ---
@@ -14,6 +20,7 @@ Unlike standard "happy path" tutorials, this project simulates a **hostile data 
 ### 🏆 Key Features
 
 * **🌪️ Chaos Engineering:** A Python engine that generates synthetic data with probabilistic failures.
+* **☁️ Stateless Backend:** Synchronizes execution state (Watermarks) with S3, allowing the pipeline to run continuously from any machine.
 * **🏗️ Dual-DAG Architecture:** Implements a robust "Init vs Incremental" strategy for scalable ingestion.
 * **❄️ Snowflake Data Lakehouse:** Uses `Variant` tables for RAW loading and Normalized Marts for analytics.
 * **✅ dbt & Elementary:** Advanced transformation with automated testing and anomaly detection (Data Observability).
@@ -194,7 +201,10 @@ Enable the **`enterprise_data_quality_monitor`** DAG (@daily).
 * ✅ Generates only new data (today's orders).
 * ✅ Incrementally loads to Snowflake.
 
+
 ### 6. View Dashboard
+
+**Note:** For local execution, ensure you have created `.streamlit/secrets.toml` (copying values from `.env`).
 
 Run the frontend locally:
 

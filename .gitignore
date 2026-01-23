@@ -64,3 +64,8 @@ dashboard_feed.csv
 .streamlit/secrets.toml
 
 TO-DO.md
+
+.streamlit/
+
+.devcontainer/
+
